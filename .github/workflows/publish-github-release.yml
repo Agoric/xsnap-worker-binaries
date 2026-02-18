@@ -29,6 +29,7 @@ jobs:
       VERSION: ${{ inputs.version }}
       TAG: v${{ inputs.version }}
       BUNDLE_DIR: bundle
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
 
