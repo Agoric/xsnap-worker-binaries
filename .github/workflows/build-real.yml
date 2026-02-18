@@ -50,6 +50,9 @@ jobs:
       - name: Verify per-target artifacts
         run: npm run ci:verify
 
+      - name: Rename manifest with target suffix
+        run: mv "manifests/${VERSION}.json" "manifests/${VERSION}-${TARGETS}.json"
+
       - name: Upload target artifact
         uses: actions/upload-artifact@v4
         with:
@@ -57,4 +60,27 @@ jobs:
           path: |
             dist/${{ matrix.target }}/**
             packages/**/bin/**
-            manifests/*.json
+            manifests/${{ inputs.version }}-${{ matrix.target }}.json
+
+  assemble-release-bundle:
+    needs: build-target
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "*-artifacts"
+          merge-multiple: true
+          path: collected
+
+      - name: Assemble combined release bundle
+        run: ./scripts/assemble-release-bundle.sh collected "release/${VERSION}"
+
+      - name: Upload combined release bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-bundle-${{ inputs.version }}
+          path: release/${{ inputs.version }}/**

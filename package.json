@@ -9,6 +9,7 @@
     "ci:build:real": "./scripts/build-all.sh",
     "ci:stage": "./scripts/stage-packages.sh",
     "ci:manifest": "./scripts/generate-manifest.sh",
+    "ci:manifest:merge": "./scripts/merge-target-manifests.sh",
     "ci:verify": "./scripts/verify-artifacts.sh",
     "ci:check-npm": "./scripts/check-npm-availability.sh",
     "ci:check-version-sync": "./scripts/validate-version-sync.sh",

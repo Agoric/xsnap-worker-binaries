@@ -47,3 +47,12 @@ npm run ci:build:real
 Notes for real mode:
 - Build host must match target (`linux-x64`, `linux-arm64`, `darwin-x64`, `darwin-arm64`).
 - Source is pulled from `Agoric/agoric-sdk` (override with `AGORIC_SDK_REPO`, `AGORIC_SDK_REF`, `AGORIC_SDK_DIR`).
+
+## build-real Workflow Output
+The `build-real` workflow builds each supported target in a matrix, then assembles a combined artifact:
+- `release-bundle-<version>` (GitHub Actions artifact)
+- Includes:
+  - `dist/<target>/{release,debug}/xsnap-worker`
+  - `packages/<package>/` with staged `bin/` content
+  - merged manifest `manifests/<version>.json`
+  - `xsnap-worker-binaries-<version>.tar.gz`
