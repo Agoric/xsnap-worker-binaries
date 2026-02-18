@@ -9,6 +9,8 @@
     "ci:stage": "./scripts/stage-packages.sh",
     "ci:manifest": "./scripts/generate-manifest.sh",
     "ci:verify": "./scripts/verify-artifacts.sh",
+    "ci:check-npm": "./scripts/check-npm-availability.sh",
+    "ci:check-version-sync": "./scripts/validate-version-sync.sh",
     "release:dry-run": "./scripts/publish-all.sh --dry-run"
   }
 }

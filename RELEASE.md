@@ -20,5 +20,8 @@ VERSION=X.Y.Z ./scripts/publish-all.sh
 ```
 
 ## Post-publish
-- Confirm all four package versions are visible on npm.
+- Confirm all four package versions are visible on npm:
+```bash
+VERSION=X.Y.Z npm run ci:check-npm
+```
 - Publish/share `manifests/X.Y.Z.json` for agoric-sdk consumption.

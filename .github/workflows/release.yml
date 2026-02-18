@@ -44,3 +44,7 @@ jobs:
       - name: Publish all packages
         if: ${{ inputs.dry_run != 'true' }}
         run: ./scripts/publish-all.sh
+
+      - name: Verify npm availability
+        if: ${{ inputs.dry_run != 'true' }}
+        run: npm run ci:check-npm
