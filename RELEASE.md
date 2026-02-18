@@ -6,6 +6,17 @@
 - `NPM_TOKEN` is configured in GitHub Actions secrets.
 - Live publish is disabled unless `ALLOW_NPM_PUBLISH=true`.
 
+## GitHub Release (No NPM)
+Promote build artifacts to a GitHub release first:
+```bash
+gh workflow run publish-github-release \
+  -f version=X.Y.Z \
+  -f build_real_run_id=<build-real-run-id> \
+  -f prerelease=true \
+  -f dry_run=true
+```
+Set `dry_run=false` when ready to create the release.
+
 ## Bundle Validation (No Publish)
 ```bash
 gh workflow run release \

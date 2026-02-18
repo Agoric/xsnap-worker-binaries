@@ -1,0 +1,85 @@
+name: publish-github-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release (example 0.15.0)
+        required: true
+      build_real_run_id:
+        description: Successful build-real workflow run ID
+        required: true
+      prerelease:
+        description: Mark release as pre-release
+        required: true
+        default: "false"
+      dry_run:
+        description: Validate only, do not create GitHub release
+        required: true
+        default: "true"
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish-release:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version }}
+      TAG: v${{ inputs.version }}
+      BUNDLE_DIR: bundle
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download release bundle artifact from build-real
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.build_real_run_id }}
+          github-token: ${{ github.token }}
+          name: release-bundle-${{ inputs.version }}
+          path: ${{ env.BUNDLE_DIR }}
+
+      - name: Validate bundle contents
+        run: |
+          test -f "${BUNDLE_DIR}/xsnap-worker-binaries-${VERSION}.tar.gz"
+          test -f "${BUNDLE_DIR}/manifests/${VERSION}.json"
+
+      - name: Check release tag does not already exist
+        run: |
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "Release ${TAG} already exists" >&2
+            exit 1
+          fi
+
+      - name: Dry run summary
+        if: ${{ inputs.dry_run == 'true' }}
+        run: |
+          echo "Dry run only. Would create release ${TAG} with assets:"
+          echo "- ${BUNDLE_DIR}/xsnap-worker-binaries-${VERSION}.tar.gz"
+          echo "- ${BUNDLE_DIR}/manifests/${VERSION}.json (renamed to xsnap-worker-manifest-${VERSION}.json)"
+
+      - name: Create GitHub release
+        if: ${{ inputs.dry_run != 'true' }}
+        run: |
+          cp "${BUNDLE_DIR}/manifests/${VERSION}.json" "${BUNDLE_DIR}/xsnap-worker-manifest-${VERSION}.json"
+
+          prerelease_flag=""
+          if [[ "${{ inputs.prerelease }}" == "true" ]]; then
+            prerelease_flag="--prerelease"
+          fi
+
+          cat > release-notes.txt <<NOTES
+          Prebuilt xsnap-worker binaries for ${VERSION}.
+
+          Assets:
+          - xsnap-worker-binaries-${VERSION}.tar.gz
+          - xsnap-worker-manifest-${VERSION}.json
+          NOTES
+
+          gh release create "${TAG}" \
+            "${BUNDLE_DIR}/xsnap-worker-binaries-${VERSION}.tar.gz" \
+            "${BUNDLE_DIR}/xsnap-worker-manifest-${VERSION}.json" \
+            --title "xsnap-worker-binaries ${TAG}" \
+            --notes-file release-notes.txt \
+            ${prerelease_flag}

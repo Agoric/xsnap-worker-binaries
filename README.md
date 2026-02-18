@@ -56,3 +56,30 @@ The `build-real` workflow builds each supported target in a matrix, then assembl
   - `packages/<package>/` with staged `bin/` content
   - merged manifest `manifests/<version>.json`
   - `xsnap-worker-binaries-<version>.tar.gz`
+
+## GitHub Release Promotion
+You can promote a successful `build-real` run to a GitHub Release without touching npm:
+
+```bash
+gh workflow run publish-github-release \
+  -f version=X.Y.Z \
+  -f build_real_run_id=<build-real-run-id> \
+  -f prerelease=true \
+  -f dry_run=true
+```
+
+Set `dry_run=false` to actually create tag `vX.Y.Z` and upload:
+- `xsnap-worker-binaries-X.Y.Z.tar.gz`
+- `xsnap-worker-manifest-X.Y.Z.json`
+
+## agoric-sdk Pre-NPM Consumption
+`agoric-sdk` CI can consume these release assets directly:
+
+```bash
+./scripts/download-release-assets.sh X.Y.Z /tmp/xsnap-assets
+tar -xzf /tmp/xsnap-assets/xsnap-worker-binaries-X.Y.Z.tar.gz -C /tmp/xsnap-assets
+target=\"$(./scripts/host-target.sh)\"
+export XSNAP_WORKER=\"/tmp/xsnap-assets/dist/${target}/release/xsnap-worker\"
+```
+
+Then run agoric-sdk tests with `XSNAP_WORKER` override enabled.
