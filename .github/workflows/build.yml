@@ -1,0 +1,37 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-verify:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: 0.0.0-dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build mock binaries
+        run: npm run ci:build
+
+      - name: Stage packages
+        run: npm run ci:stage
+
+      - name: Generate manifest
+        run: npm run ci:manifest
+
+      - name: Verify artifacts
+        run: npm run ci:verify
+
+      - name: Upload manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: manifests
+          path: manifests/*.json

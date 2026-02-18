@@ -1,0 +1,12 @@
+{
+  "name": "@agoric/xsnap-darwin-arm64",
+  "version": "0.0.0",
+  "description": "Prebuilt xsnap-worker for darwin-arm64",
+  "license": "Apache-2.0",
+  "os": ["darwin"],
+  "cpu": ["arm64"],
+  "files": ["bin/**"],
+  "publishConfig": {
+    "access": "public"
+  }
+}

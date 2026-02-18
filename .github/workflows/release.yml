@@ -1,0 +1,46 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version (example 0.15.0)
+        required: true
+      dry_run:
+        description: Run npm publish in dry-run mode
+        required: true
+        default: "true"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Build artifacts
+        run: npm run ci:build
+
+      - name: Stage packages
+        run: npm run ci:stage
+
+      - name: Generate manifest
+        run: npm run ci:manifest
+
+      - name: Verify artifacts
+        run: npm run ci:verify
+
+      - name: Publish all packages (dry run)
+        if: ${{ inputs.dry_run == 'true' }}
+        run: npm run release:dry-run
+
+      - name: Publish all packages
+        if: ${{ inputs.dry_run != 'true' }}
+        run: ./scripts/publish-all.sh

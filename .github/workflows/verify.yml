@@ -1,0 +1,23 @@
+name: verify
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to verify
+        required: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm run ci:build
+      - run: npm run ci:stage
+      - run: npm run ci:manifest
+      - run: npm run ci:verify

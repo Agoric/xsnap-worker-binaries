@@ -1,0 +1,14 @@
+{
+  "name": "xsnap-worker-binaries",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Prebuilt xsnap-worker platform packages",
+  "license": "Apache-2.0",
+  "scripts": {
+    "ci:build": "./scripts/build-all.sh --mock",
+    "ci:stage": "./scripts/stage-packages.sh",
+    "ci:manifest": "./scripts/generate-manifest.sh",
+    "ci:verify": "./scripts/verify-artifacts.sh",
+    "release:dry-run": "./scripts/publish-all.sh --dry-run"
+  }
+}
