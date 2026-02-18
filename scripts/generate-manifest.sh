@@ -10,15 +10,13 @@ out="manifests/$version.json"
 mkdir -p manifests
 
 {
-  mapfile -t targets < <(resolve_targets)
-
   echo "{"
   echo "  \"version\": \"$version\","
   echo "  \"generatedAt\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\","
   echo "  \"targets\": {"
 
-  for i in "${!targets[@]}"; do
-    target="${targets[$i]}"
+  first="true"
+  for target in $(resolve_targets); do
     pkg="$(package_for_target "$target")"
     release_path="packages/$pkg/bin/release/xsnap-worker"
     debug_path="packages/$pkg/bin/debug/xsnap-worker"
@@ -31,11 +29,11 @@ mkdir -p manifests
     release_sha="$(sha256_file "$release_path")"
     debug_sha="$(sha256_file "$debug_path")"
 
-    comma=","
-    if [[ "$i" -eq $((${#targets[@]} - 1)) ]]; then
-      comma=""
+    if [[ "$first" == "true" ]]; then
+      first="false"
+    else
+      echo ","
     fi
-
     cat <<JSON
     "$target": {
       "package": "@agoric/$pkg",
@@ -47,10 +45,11 @@ mkdir -p manifests
         "path": "bin/debug/xsnap-worker",
         "sha256": "$debug_sha"
       }
-    }$comma
+    }
 JSON
   done
 
+  echo
   echo "  }"
   echo "}"
 } > "$out"

@@ -8,13 +8,12 @@ source "$SCRIPT_DIR/common.sh"
 version="$(require_version)"
 manifest="manifests/$version.json"
 
-mapfile -t targets < <(resolve_targets)
 if [[ ! -f "$manifest" ]]; then
   echo "Missing manifest: $manifest" >&2
   exit 1
 fi
 
-for target in "${targets[@]}"; do
+for target in $(resolve_targets); do
   pkg="$(package_for_target "$target")"
   for mode in release debug; do
     bin="packages/$pkg/bin/$mode/xsnap-worker"
@@ -30,7 +29,7 @@ for target in "${targets[@]}"; do
 done
 
 # Verify manifest hashes against staged binaries.
-for target in "${targets[@]}"; do
+for target in $(resolve_targets); do
   pkg="$(package_for_target "$target")"
   release="packages/$pkg/bin/release/xsnap-worker"
   debug="packages/$pkg/bin/debug/xsnap-worker"

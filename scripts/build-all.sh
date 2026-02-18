@@ -6,7 +6,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
 
 MODE="${1:-}"
-mapfile -t targets < <(resolve_targets)
-for target in "${targets[@]}"; do
+for target in $(resolve_targets); do
   "$SCRIPT_DIR/build-target.sh" "$target" "$MODE"
 done

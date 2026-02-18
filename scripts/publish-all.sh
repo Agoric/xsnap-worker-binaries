@@ -20,7 +20,6 @@ if [[ "$DRY_RUN" != "true" && -z "${NPM_TOKEN:-}" ]]; then
 fi
 
 stage_root="$(mktemp -d)"
-mapfile -t targets < <(resolve_targets)
 
 cleanup() {
   rm -rf "$stage_root"
@@ -29,7 +28,7 @@ cleanup() {
 trap cleanup EXIT
 
 # Create isolated package copies and stamp the release version there.
-for target in "${targets[@]}"; do
+for target in $(resolve_targets); do
   pkg="$(package_for_target "$target")"
   pkg_dir="$REPO_ROOT/packages/$pkg"
   if [[ ! -d "$pkg_dir" ]]; then
@@ -54,7 +53,7 @@ done
 
 PACKAGES_DIR="$stage_root" "$SCRIPT_DIR/validate-version-sync.sh"
 
-for target in "${targets[@]}"; do
+for target in $(resolve_targets); do
   pkg="$(package_for_target "$target")"
   pkg_dir="$stage_root/$pkg"
 
