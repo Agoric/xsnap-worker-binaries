@@ -1,0 +1,60 @@
+name: build-real
+
+on:
+  workflow_dispatch:
+    inputs:
+      agoric_sdk_ref:
+        description: agoric-sdk ref (branch, tag, or SHA)
+        required: false
+        default: master
+      version:
+        description: manifest version label
+        required: false
+        default: 0.0.0-dev
+
+jobs:
+  build-target:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: linux-x64
+            runner: ubuntu-24.04
+          - target: linux-arm64
+            runner: ubuntu-24.04-arm
+          - target: darwin-x64
+            runner: macos-13
+          - target: darwin-arm64
+            runner: macos-14
+    runs-on: ${{ matrix.runner }}
+    env:
+      TARGETS: ${{ matrix.target }}
+      VERSION: ${{ inputs.version }}
+      AGORIC_SDK_REF: ${{ inputs.agoric_sdk_ref }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build real binaries
+        run: npm run ci:build:real
+
+      - name: Stage package
+        run: npm run ci:stage
+
+      - name: Generate per-target manifest
+        run: npm run ci:manifest
+
+      - name: Verify per-target artifacts
+        run: npm run ci:verify
+
+      - name: Upload target artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}-artifacts
+          path: |
+            dist/${{ matrix.target }}/**
+            packages/**/bin/**
+            manifests/*.json

@@ -8,8 +8,9 @@ source "$SCRIPT_DIR/common.sh"
 version="$(require_version)"
 attempts="${NPM_CHECK_ATTEMPTS:-10}"
 sleep_seconds="${NPM_CHECK_SLEEP_SECONDS:-15}"
+mapfile -t targets < <(resolve_targets)
 
-for target in "${TARGETS[@]}"; do
+for target in "${targets[@]}"; do
   pkg="$(package_for_target "$target")"
   scoped_pkg="@agoric/$pkg"
 

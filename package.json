@@ -6,6 +6,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "ci:build": "./scripts/build-all.sh --mock",
+    "ci:build:real": "./scripts/build-all.sh",
     "ci:stage": "./scripts/stage-packages.sh",
     "ci:manifest": "./scripts/generate-manifest.sh",
     "ci:verify": "./scripts/verify-artifacts.sh",

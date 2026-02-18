@@ -36,4 +36,14 @@ npm run ci:manifest
 npm run ci:verify
 ```
 
-`ci:build` uses mock artifacts by default for bootstrap validation. Real native build integration should replace mock generation in `scripts/build-target.sh`.
+`ci:build` uses mock artifacts by default for bootstrap validation.
+
+Real build mode is available:
+```bash
+TARGETS="$(uname | tr '[:upper:]' '[:lower:]')-$(uname -m | sed -e 's/x86_64/x64/' -e 's/aarch64/arm64/' -e 's/arm64/arm64/')" \
+npm run ci:build:real
+```
+
+Notes for real mode:
+- Build host must match target (`linux-x64`, `linux-arm64`, `darwin-x64`, `darwin-arm64`).
+- Source is pulled from `Agoric/agoric-sdk` (override with `AGORIC_SDK_REPO`, `AGORIC_SDK_REF`, `AGORIC_SDK_DIR`).

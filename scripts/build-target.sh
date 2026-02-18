@@ -37,6 +37,42 @@ MOCK
   exit 0
 fi
 
-echo "Real build mode not wired yet for $TARGET." >&2
-echo "Provide build integration in scripts/build-target.sh before release." >&2
-exit 1
+assert_target_matches_host "$TARGET"
+
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+AGORIC_SDK_REPO="${AGORIC_SDK_REPO:-https://github.com/Agoric/agoric-sdk.git}"
+AGORIC_SDK_REF="${AGORIC_SDK_REF:-master}"
+AGORIC_SDK_DIR="${AGORIC_SDK_DIR:-$REPO_ROOT/.cache/agoric-sdk}"
+
+if [[ ! -d "$AGORIC_SDK_DIR/.git" ]]; then
+  mkdir -p "$(dirname "$AGORIC_SDK_DIR")"
+  git clone "$AGORIC_SDK_REPO" "$AGORIC_SDK_DIR"
+fi
+
+(
+  cd "$AGORIC_SDK_DIR"
+  git fetch --tags origin
+  git checkout "$AGORIC_SDK_REF"
+)
+
+(
+  cd "$AGORIC_SDK_DIR/packages/xsnap"
+  node src/build.js
+)
+
+platform_path="$(platform_path_for_target "$TARGET")"
+release_src="$AGORIC_SDK_DIR/packages/xsnap/xsnap-native/xsnap/build/bin/$platform_path/release/xsnap-worker"
+debug_src="$AGORIC_SDK_DIR/packages/xsnap/xsnap-native/xsnap/build/bin/$platform_path/debug/xsnap-worker"
+
+if [[ ! -f "$release_src" || ! -f "$debug_src" ]]; then
+  echo "Expected build outputs are missing for $TARGET" >&2
+  echo "Release: $release_src" >&2
+  echo "Debug:   $debug_src" >&2
+  exit 1
+fi
+
+cp "$release_src" "$OUT_DIR/release/xsnap-worker"
+cp "$debug_src" "$OUT_DIR/debug/xsnap-worker"
+chmod +x "$OUT_DIR/release/xsnap-worker" "$OUT_DIR/debug/xsnap-worker"
+
+echo "Built real artifacts for $TARGET from $AGORIC_SDK_REF"

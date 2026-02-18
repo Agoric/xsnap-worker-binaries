@@ -5,7 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=./common.sh
 source "$SCRIPT_DIR/common.sh"
 
-for target in "${TARGETS[@]}"; do
+mapfile -t targets < <(resolve_targets)
+for target in "${targets[@]}"; do
   pkg="$(package_for_target "$target")"
   pkg_dir="packages/$pkg"
   in_release="dist/$target/release/xsnap-worker"

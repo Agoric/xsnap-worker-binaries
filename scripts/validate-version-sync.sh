@@ -7,8 +7,9 @@ source "$SCRIPT_DIR/common.sh"
 
 version="$(require_version)"
 packages_dir="${PACKAGES_DIR:-packages}"
+mapfile -t targets < <(resolve_targets)
 
-for target in "${TARGETS[@]}"; do
+for target in "${targets[@]}"; do
   pkg="$(package_for_target "$target")"
   pkg_json="$packages_dir/$pkg/package.json"
 
