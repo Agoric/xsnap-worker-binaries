@@ -6,10 +6,13 @@ on:
       version:
         description: Release version (example 0.15.0)
         required: true
-      dry_run:
-        description: Run npm publish in dry-run mode
+      build_real_run_id:
+        description: GitHub Actions run ID of a successful build-real run
         required: true
-        default: "true"
+      publish_live:
+        description: Set true to allow live npm publish (still requires ALLOW_NPM_PUBLISH)
+        required: true
+        default: "false"
 
 jobs:
   release:
@@ -17,6 +20,8 @@ jobs:
     env:
       VERSION: ${{ inputs.version }}
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      ALLOW_NPM_PUBLISH: ${{ vars.ALLOW_NPM_PUBLISH }}
+      BUNDLE_DIR: bundle
     steps:
       - uses: actions/checkout@v4
 
@@ -25,26 +30,27 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Build artifacts
-        run: npm run ci:build
+      - name: Download release bundle artifact from build-real
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.build_real_run_id }}
+          github-token: ${{ github.token }}
+          name: release-bundle-${{ inputs.version }}
+          path: ${{ env.BUNDLE_DIR }}
 
-      - name: Stage packages
-        run: npm run ci:stage
+      - name: Validate bundle structure
+        run: |
+          test -f "${BUNDLE_DIR}/manifests/${VERSION}.json"
+          test -d "${BUNDLE_DIR}/packages"
+          test -d "${BUNDLE_DIR}/dist"
 
-      - name: Generate manifest
-        run: npm run ci:manifest
+      - name: Validate bundle publish (dry-run only)
+        run: ./scripts/publish-from-bundle.sh "${BUNDLE_DIR}" --dry-run
 
-      - name: Verify artifacts
-        run: npm run ci:verify
-
-      - name: Publish all packages (dry run)
-        if: ${{ inputs.dry_run == 'true' }}
-        run: npm run release:dry-run
-
-      - name: Publish all packages
-        if: ${{ inputs.dry_run != 'true' }}
-        run: ./scripts/publish-all.sh
+      - name: Publish bundle packages (live)
+        if: ${{ inputs.publish_live == 'true' }}
+        run: ./scripts/publish-from-bundle.sh "${BUNDLE_DIR}"
 
       - name: Verify npm availability
-        if: ${{ inputs.dry_run != 'true' }}
+        if: ${{ inputs.publish_live == 'true' }}
         run: npm run ci:check-npm

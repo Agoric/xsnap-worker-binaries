@@ -13,6 +13,7 @@
     "ci:verify": "./scripts/verify-artifacts.sh",
     "ci:check-npm": "./scripts/check-npm-availability.sh",
     "ci:check-version-sync": "./scripts/validate-version-sync.sh",
+    "release:bundle:dry-run": "./scripts/publish-from-bundle.sh release/$VERSION --dry-run",
     "release:dry-run": "./scripts/publish-all.sh --dry-run"
   }
 }

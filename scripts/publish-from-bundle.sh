@@ -6,22 +6,41 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # shellcheck source=./common.sh
 source "$SCRIPT_DIR/common.sh"
 
+bundle_root="${1:-}"
+if [[ -z "$bundle_root" ]]; then
+  echo "Usage: $0 <bundle-root> [--dry-run]" >&2
+  exit 1
+fi
+
 DRY_RUN="false"
-if [[ "${1:-}" == "--dry-run" ]]; then
+if [[ "${2:-}" == "--dry-run" ]]; then
   DRY_RUN="true"
 fi
 
-version="$(require_version)"
-export NPM_CONFIG_CACHE="${NPM_CONFIG_CACHE:-$REPO_ROOT/.npm-cache}"
-
-if [[ "$DRY_RUN" != "true" && -z "${NPM_TOKEN:-}" ]]; then
-  echo "NPM_TOKEN is required for publish" >&2
+if [[ ! -d "$bundle_root/packages" || ! -d "$bundle_root/manifests" ]]; then
+  echo "Invalid bundle root: $bundle_root" >&2
+  echo "Expected subdirectories: packages/, manifests/" >&2
   exit 1
 fi
 
-if [[ "$DRY_RUN" != "true" && "${ALLOW_NPM_PUBLISH:-false}" != "true" ]]; then
-  echo "Refusing to publish: set ALLOW_NPM_PUBLISH=true to enable live publish." >&2
+version="$(require_version)"
+manifest="$bundle_root/manifests/$version.json"
+if [[ ! -f "$manifest" ]]; then
+  echo "Expected manifest not found: $manifest" >&2
   exit 1
+fi
+
+export NPM_CONFIG_CACHE="${NPM_CONFIG_CACHE:-$REPO_ROOT/.npm-cache}"
+
+if [[ "$DRY_RUN" != "true" ]]; then
+  if [[ "${ALLOW_NPM_PUBLISH:-false}" != "true" ]]; then
+    echo "Refusing to publish: set ALLOW_NPM_PUBLISH=true to enable live publish." >&2
+    exit 1
+  fi
+  if [[ -z "${NPM_TOKEN:-}" ]]; then
+    echo "NPM_TOKEN is required for publish" >&2
+    exit 1
+  fi
 fi
 
 stage_root="$(mktemp -d)"
@@ -32,18 +51,16 @@ cleanup() {
 
 trap cleanup EXIT
 
-# Create isolated package copies and stamp the release version there.
 for target in $(resolve_targets); do
   pkg="$(package_for_target "$target")"
-  pkg_dir="$REPO_ROOT/packages/$pkg"
+  pkg_dir="$bundle_root/packages/$pkg"
   if [[ ! -d "$pkg_dir" ]]; then
-    echo "Missing package directory: $pkg_dir" >&2
+    echo "Missing package directory in bundle: $pkg_dir" >&2
     exit 1
   fi
 
   staged_pkg="$stage_root/$pkg"
   cp -R "$pkg_dir" "$staged_pkg"
-
   (
     cd "$staged_pkg"
     node -e '
@@ -65,7 +82,6 @@ for target in $(resolve_targets); do
   (
     cd "$pkg_dir"
     if [[ "$DRY_RUN" == "true" ]]; then
-      # Use pack dry-run to validate package contents without hitting npm registry.
       npm pack --dry-run
     else
       npm publish --access public
@@ -73,4 +89,4 @@ for target in $(resolve_targets); do
   )
 done
 
-echo "Publish flow complete for $version"
+echo "Bundle publish flow complete for $version"

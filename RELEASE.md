@@ -2,22 +2,26 @@
 
 ## Preconditions
 - All CI checks pass on `main`.
-- Four supported packages are ready to publish at the same version.
+- A successful `build-real` workflow run exists for the same version.
 - `NPM_TOKEN` is configured in GitHub Actions secrets.
+- Live publish is disabled unless `ALLOW_NPM_PUBLISH=true`.
 
-## Dry Run
+## Bundle Validation (No Publish)
 ```bash
-VERSION=X.Y.Z npm run ci:build
-VERSION=X.Y.Z npm run ci:stage
-VERSION=X.Y.Z npm run ci:manifest
-VERSION=X.Y.Z npm run ci:verify
-VERSION=X.Y.Z npm run release:dry-run
+gh workflow run release \
+  -f version=X.Y.Z \
+  -f build_real_run_id=<build-real-run-id> \
+  -f publish_live=false
 ```
 
-## Publish
+## Live Publish (Guarded)
 ```bash
-VERSION=X.Y.Z ./scripts/publish-all.sh
+gh workflow run release \
+  -f version=X.Y.Z \
+  -f build_real_run_id=<build-real-run-id> \
+  -f publish_live=true
 ```
+This still requires repository variable `ALLOW_NPM_PUBLISH=true`.
 
 ## Post-publish
 - Confirm all four package versions are visible on npm:
