@@ -22,6 +22,9 @@ Windows is not supported.
 - `manifests/`: generated SHA256 manifests.
 - `.github/workflows/`: CI, verify, and release workflows.
 
+## Compatibility
+See `COMPATIBILITY.md` for Linux ABI compatibility requirements with agoric-sdk runtime images.
+
 ## Release Contract
 For version `X.Y.Z`:
 1. Publish all four platform packages at `X.Y.Z`.
@@ -78,8 +81,8 @@ Set `dry_run=false` to actually create tag `vX.Y.Z` and upload:
 ```bash
 ./scripts/download-release-assets.sh X.Y.Z /tmp/xsnap-assets
 tar -xzf /tmp/xsnap-assets/xsnap-worker-binaries-X.Y.Z.tar.gz -C /tmp/xsnap-assets
-target=\"$(./scripts/host-target.sh)\"
-export XSNAP_WORKER=\"/tmp/xsnap-assets/dist/${target}/release/xsnap-worker\"
+target="$(./scripts/host-target.sh)"
+export XSNAP_WORKER="/tmp/xsnap-assets/dist/${target}/release/xsnap-worker"
 ```
 
 Then run agoric-sdk tests with `XSNAP_WORKER` override enabled.

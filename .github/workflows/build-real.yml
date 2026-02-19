@@ -20,8 +20,10 @@ jobs:
         include:
           - target: linux-x64
             runner: ubuntu-24.04
+            docker_platform: linux/amd64
           - target: linux-arm64
             runner: ubuntu-24.04-arm
+            docker_platform: linux/arm64
           - target: darwin-x64
             runner: macos-15-intel
           - target: darwin-arm64
@@ -38,8 +40,43 @@ jobs:
         with:
           node-version: 20
 
-      - name: Build real binaries
+      - name: Build real binaries (linux in bullseye container)
+        if: startsWith(matrix.target, 'linux-')
+        run: |
+          docker run --rm \
+            --platform "${{ matrix.docker_platform }}" \
+            -e TARGETS="$TARGETS" \
+            -e VERSION="$VERSION" \
+            -e AGORIC_SDK_REF="$AGORIC_SDK_REF" \
+            -e AGORIC_SDK_REPO="${AGORIC_SDK_REPO:-}" \
+            -e AGORIC_SDK_DIR="/work/.cache/agoric-sdk" \
+            -v "$PWD:/work" \
+            -w /work \
+            node:20-bullseye \
+            bash -lc 'apt-get update && apt-get install -y --no-install-recommends git build-essential python3 ca-certificates && npm run ci:build:real'
+
+      - name: Build real binaries (darwin host)
+        if: startsWith(matrix.target, 'darwin-')
         run: npm run ci:build:real
+
+      - name: Verify Linux GLIBC floor compatibility
+        if: startsWith(matrix.target, 'linux-')
+        run: |
+          floor='GLIBC_2.31'
+          for mode in release debug; do
+            bin="dist/${TARGETS}/${mode}/xsnap-worker"
+            test -x "$bin"
+            max_symbol=$(readelf --version-info "$bin" \
+              | grep -Eo 'GLIBC_[0-9]+\.[0-9]+' \
+              | sort -Vu \
+              | tail -1 || true)
+            test -n "$max_symbol"
+            if [[ "$(printf '%s\n' "$floor" "$max_symbol" | sort -V | tail -1)" != "$floor" ]]; then
+              echo "$bin requires $max_symbol, must be <= $floor" >&2
+              exit 1
+            fi
+            echo "$bin max glibc symbol: $max_symbol (compatible with $floor)"
+          done
 
       - name: Stage package
         run: npm run ci:stage
